@@ -1,0 +1,23 @@
+version: "3.7"
+services:
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: jwt
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    volumes:
+      - ./db/migration:/docker-entrypoint-initdb.d
+    ports:
+      - "3306"
+
+  server:
+    image: go
+    build: ./server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: always
