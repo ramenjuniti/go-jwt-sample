@@ -9,35 +9,35 @@ import (
 )
 
 func signup(w http.ResponseWriter, r *http.Request) {
-	var user *User
+	u := &User{}
 
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
-	if user.Email == "" {
+	if u.Email == "" {
 		errRes(w, http.StatusBadRequest, fmt.Errorf("Email is null or empty"))
 		return
 	}
-	if user.Password == "" {
+	if u.Password == "" {
 		errRes(w, http.StatusBadRequest, fmt.Errorf("Password is null or empty"))
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), 10)
 	if err != nil {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	user.Password = string(hash)
+	u.Password = string(hash)
 
 	trans, err := dbm.Begin()
 	if err != nil {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
-	if err := trans.Insert(user); err != nil {
+	if err := trans.Insert(u); err != nil {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -46,8 +46,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Password = "[FILTERED]"
+	u.Password = "[FILTERED]"
 
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(u)
 }
