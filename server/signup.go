@@ -9,7 +9,8 @@ import (
 )
 
 func signup(w http.ResponseWriter, r *http.Request) {
-	u := &User{}
+	u := User{}
+	jwt := JWT{}
 
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		errRes(w, http.StatusInternalServerError, err)
@@ -37,7 +38,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
-	if err := trans.Insert(u); err != nil {
+	if err := trans.Insert(&u); err != nil {
 		errRes(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -46,9 +47,15 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u.Password = "[FILTERED]"
+	token, err := createToken(u)
+	if err != nil {
+		errRes(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	jwt.Token = token
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(u)
+	json.NewEncoder(w).Encode(jwt)
 }
